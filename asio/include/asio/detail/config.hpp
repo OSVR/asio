@@ -225,6 +225,10 @@
 #   if (_MSC_VER >= 1900)
 #    define ASIO_NOEXCEPT noexcept(true)
 #    define ASIO_NOEXCEPT_OR_NOTHROW noexcept(true)
+#   elif (_MSC_VER >= 1700)
+// "weird way of spelling noexcept"
+#    define ASIO_NOEXCEPT throw()
+#    define ASIO_NOEXCEPT_OR_NOTHROW throw()
 #   endif // (_MSC_VER >= 1900)
 #  endif // defined(ASIO_MSVC)
 # endif // !defined(ASIO_DISABLE_NOEXCEPT)
