@@ -156,6 +156,11 @@
 #    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
 #   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 4)
 #  endif // defined(__GNUC__)
+#  if defined(ASIO_MSVC) && !defined(__clang__)
+#    if (_MSC_VER >= 1800)
+#      define ASIO_HAS_VARIADIC_TEMPLATES 1
+#    endif // (_MSC_VER >= 1800)
+#  endif // defined(ASIO_MSVC) && !defined(__clang__)
 # endif // !defined(ASIO_DISABLE_VARIADIC_TEMPLATES)
 #endif // !defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
@@ -173,6 +178,11 @@
 #   define ASIO_DELETED = delete
 #  endif // __has_feature(__cxx_deleted_functions__)
 # endif // defined(__clang__)
+# if defined(ASIO_MSVC) && !defined(__clang__)
+#  if (_MSC_VER >= 1800)
+#   define ASIO_DELETED = delete
+#  endif // (_MSC_VER >= 1800)
+# endif // defined(ASIO_MSVC) && !defined(__clang__)
 # if !defined(ASIO_DELETED)
 #  define ASIO_DELETED
 # endif // !defined(ASIO_DELETED)
@@ -225,6 +235,10 @@
 #   if (_MSC_VER >= 1900)
 #    define ASIO_NOEXCEPT noexcept(true)
 #    define ASIO_NOEXCEPT_OR_NOTHROW noexcept(true)
+#   elif (_MSC_VER >= 1700)
+// "weird way of spelling noexcept"
+#    define ASIO_NOEXCEPT throw()
+#    define ASIO_NOEXCEPT_OR_NOTHROW throw()
 #   endif // (_MSC_VER >= 1900)
 #  endif // defined(ASIO_MSVC)
 # endif // !defined(ASIO_DISABLE_NOEXCEPT)
