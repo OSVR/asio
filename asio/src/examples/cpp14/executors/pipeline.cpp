@@ -10,9 +10,9 @@
 using asio::execution_context;
 using asio::executor_binder;
 using asio::get_associated_executor;
-using asio::package;
 using asio::post;
 using asio::system_executor;
+using asio::use_future;
 using asio::use_service;
 
 // An executor that launches a new thread for each function submitted to it.
@@ -24,7 +24,7 @@ private:
   class thread_bag : public execution_context::service
   {
   public:
-    static execution_context::id id;
+    typedef thread_bag key_type;
 
     explicit thread_bag(execution_context& ctx)
       : execution_context::service(ctx)
@@ -49,56 +49,52 @@ private:
   };
 
 public:
-  execution_context& context() noexcept
+  execution_context& context() const noexcept
   {
     return system_executor().context();
   }
 
-  void on_work_started() noexcept
+  void on_work_started() const noexcept
   {
     // This executor doesn't count work.
   }
 
-  void on_work_finished() noexcept
+  void on_work_finished() const noexcept
   {
     // This executor doesn't count work.
   }
 
   template <class Func, class Alloc>
-  void dispatch(Func&& f, const Alloc& a)
+  void dispatch(Func&& f, const Alloc& a) const
   {
     post(std::forward<Func>(f), a);
   }
 
   template <class Func, class Alloc>
-  void post(Func f, const Alloc&)
+  void post(Func f, const Alloc&) const
   {
     thread_bag& bag = use_service<thread_bag>(context());
     bag.add_thread(std::thread(std::move(f)));
   }
 
   template <class Func, class Alloc>
-  void defer(Func&& f, const Alloc& a)
+  void defer(Func&& f, const Alloc& a) const
   {
     post(std::forward<Func>(f), a);
   }
 
-  friend bool operator==(const thread_executor&, const thread_executor&)
+  friend bool operator==(const thread_executor&,
+      const thread_executor&) noexcept
   {
     return true;
   }
 
-  friend bool operator!=(const thread_executor&, const thread_executor&)
+  friend bool operator!=(const thread_executor&,
+      const thread_executor&) noexcept
   {
     return false;
   }
 };
-
-execution_context::id thread_executor::thread_bag::id;
-
-namespace asio {
-  template <> struct is_executor<thread_executor> : std::true_type {};
-}
 
 // Base class for all thread-safe queue implementations.
 class queue_impl_base
@@ -189,7 +185,7 @@ std::future<void> pipeline(queue_back<T> in, F f)
 
   // Run the function, and as we're the last stage return a future so that the
   // caller can wait for the pipeline to finish.
-  return post(ex, package([in, f = std::move(f)]() mutable { f(in); }));
+  return post(ex, use_future([in, f = std::move(f)]() mutable { f(in); }));
 }
 
 // Launch an intermediate stage in a pipeline.
@@ -246,7 +242,7 @@ std::future<void> pipeline(F f, Tail... t)
 
 //------------------------------------------------------------------------------
 
-#include <asio/ts/thread_pool.hpp>
+#include <asio/thread_pool.hpp>
 #include <iostream>
 #include <string>
 

@@ -2,7 +2,7 @@
 // posix/basic_descriptor.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,6 +16,8 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
+#if defined(ASIO_ENABLE_OLD_SERVICES)
 
 #if defined(ASIO_HAS_POSIX_STREAM_DESCRIPTOR) \
   || defined(GENERATING_DOCUMENTATION)
@@ -174,11 +176,12 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code assign(const native_handle_type& native_descriptor,
+  ASIO_SYNC_OP_VOID assign(const native_handle_type& native_descriptor,
       asio::error_code& ec)
   {
-    return this->get_service().assign(
+    this->get_service().assign(
         this->get_implementation(), native_descriptor, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Determine whether the descriptor is open.
@@ -212,9 +215,10 @@ public:
    * @param ec Set to indicate what error occurred, if any. Note that, even if
    * the function indicates an error, the underlying descriptor is closed.
    */
-  asio::error_code close(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID close(asio::error_code& ec)
   {
-    return this->get_service().close(this->get_implementation(), ec);
+    this->get_service().close(this->get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Get the native descriptor representation.
@@ -266,9 +270,10 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code cancel(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID cancel(asio::error_code& ec)
   {
-    return this->get_service().cancel(this->get_implementation(), ec);
+    this->get_service().cancel(this->get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Perform an IO control command on the descriptor.
@@ -329,11 +334,11 @@ public:
    * @endcode
    */
   template <typename IoControlCommand>
-  asio::error_code io_control(IoControlCommand& command,
+  ASIO_SYNC_OP_VOID io_control(IoControlCommand& command,
       asio::error_code& ec)
   {
-    return this->get_service().io_control(
-        this->get_implementation(), command, ec);
+    this->get_service().io_control(this->get_implementation(), command, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Gets the non-blocking mode of the descriptor.
@@ -385,11 +390,11 @@ public:
    * operations. Asynchronous operations will never fail with the error
    * asio::error::would_block.
    */
-  asio::error_code non_blocking(
+  ASIO_SYNC_OP_VOID non_blocking(
       bool mode, asio::error_code& ec)
   {
-    return this->get_service().non_blocking(
-        this->get_implementation(), mode, ec);
+    this->get_service().non_blocking(this->get_implementation(), mode, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Gets the non-blocking mode of the native descriptor implementation.
@@ -450,11 +455,12 @@ public:
    * function fails with asio::error::invalid_argument, as the
    * combination does not make sense.
    */
-  asio::error_code native_non_blocking(
+  ASIO_SYNC_OP_VOID native_non_blocking(
       bool mode, asio::error_code& ec)
   {
-    return this->get_service().native_non_blocking(
+    this->get_service().native_non_blocking(
         this->get_implementation(), mode, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Wait for the descriptor to become ready to read, ready to write, or to
@@ -499,9 +505,10 @@ public:
    * descriptor.wait(asio::posix::stream_descriptor::wait_read, ec);
    * @endcode
    */
-  asio::error_code wait(wait_type w, asio::error_code& ec)
+  ASIO_SYNC_OP_VOID wait(wait_type w, asio::error_code& ec)
   {
-    return this->get_service().wait(this->get_implementation(), w, ec);
+    this->get_service().wait(this->get_implementation(), w, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Asynchronously wait for the descriptor to become ready to read, ready to
@@ -569,5 +576,7 @@ protected:
 
 #endif // defined(ASIO_HAS_POSIX_STREAM_DESCRIPTOR)
        //   || defined(GENERATING_DOCUMENTATION)
+
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #endif // ASIO_POSIX_BASIC_DESCRIPTOR_HPP

@@ -2,7 +2,7 @@
 // ip/impl/network_v6.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2014 Oliver Kowalke (oliver dot kowalke at gmail dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -150,6 +150,21 @@ network_v6 make_network_v6(const std::string& str,
   return network_v6(make_address_v6(str.substr(0, pos)),
       std::atoi(str.substr(pos + 1).c_str()));
 }
+
+#if defined(ASIO_HAS_STD_STRING_VIEW)
+
+network_v6 make_network_v6(string_view str)
+{
+  return make_network_v6(static_cast<std::string>(str));
+}
+
+network_v6 make_network_v6(string_view str,
+    asio::error_code& ec)
+{
+  return make_network_v6(static_cast<std::string>(str), ec);
+}
+
+#endif // defined(ASIO_HAS_STD_STRING_VIEW)
 
 } // namespace ip
 } // namespace asio

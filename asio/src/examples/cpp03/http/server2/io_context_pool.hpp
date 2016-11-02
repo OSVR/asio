@@ -2,7 +2,7 @@
 // io_context_pool.hpp
 // ~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -38,13 +38,14 @@ public:
 
 private:
   typedef boost::shared_ptr<asio::io_context> io_context_ptr;
-  typedef boost::shared_ptr<asio::io_context::work> work_ptr;
+  typedef asio::executor_work_guard<
+    asio::io_context::executor_type> io_context_work;
 
   /// The pool of io_contexts.
   std::vector<io_context_ptr> io_contexts_;
 
   /// The work that keeps the io_contexts running.
-  std::vector<work_ptr> work_;
+  std::vector<io_context_work> work_;
 
   /// The next io_context to use for a connection.
   std::size_t next_io_context_;

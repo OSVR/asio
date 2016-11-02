@@ -2,7 +2,7 @@
 // detail/kqueue_reactor.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2005 Stefan Arentz (stefan at soze dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -52,6 +52,10 @@ class scheduler;
 class kqueue_reactor
   : public execution_context_service_base<kqueue_reactor>
 {
+private:
+  // The mutex type used by this reactor.
+  typedef conditionally_enabled_mutex mutex;
+
 public:
   enum op_types { read_op = 0, write_op = 1,
     connect_op = 1, except_op = 2, max_ops = 3 };
@@ -59,6 +63,8 @@ public:
   // Per-descriptor queues.
   struct descriptor_state
   {
+    descriptor_state(bool locking) : mutex_(locking) {}
+
     friend class kqueue_reactor;
     friend class object_pool_access;
 
@@ -163,7 +169,7 @@ public:
       typename timer_queue<Time_Traits>::per_timer_data& source);
 
   // Run the kqueue loop.
-  ASIO_DECL void run(bool block, op_queue<operation>& ops);
+  ASIO_DECL void run(long usec, op_queue<operation>& ops);
 
   // Interrupt the kqueue loop.
   ASIO_DECL void interrupt();
@@ -186,7 +192,7 @@ private:
   ASIO_DECL void do_remove_timer_queue(timer_queue_base& queue);
 
   // Get the timeout value for the kevent call.
-  ASIO_DECL timespec* get_timeout(timespec& ts);
+  ASIO_DECL timespec* get_timeout(long usec, timespec& ts);
 
   // The scheduler used to post completions.
   scheduler& scheduler_;

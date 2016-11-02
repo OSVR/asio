@@ -2,7 +2,7 @@
 // basic_serial_port.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -17,6 +17,8 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
+#if defined(ASIO_ENABLE_OLD_SERVICES)
 
 #if defined(ASIO_HAS_SERIAL_PORT) \
   || defined(GENERATING_DOCUMENTATION)
@@ -215,10 +217,11 @@ public:
    *
    * @param ec Set the indicate what error occurred, if any.
    */
-  asio::error_code open(const std::string& device,
+  ASIO_SYNC_OP_VOID open(const std::string& device,
       asio::error_code& ec)
   {
-    return this->get_service().open(this->get_implementation(), device, ec);
+    this->get_service().open(this->get_implementation(), device, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Assign an existing native serial port to the serial port.
@@ -245,11 +248,12 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code assign(const native_handle_type& native_serial_port,
+  ASIO_SYNC_OP_VOID assign(const native_handle_type& native_serial_port,
       asio::error_code& ec)
   {
-    return this->get_service().assign(this->get_implementation(),
+    this->get_service().assign(this->get_implementation(),
         native_serial_port, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Determine whether the serial port is open.
@@ -281,9 +285,10 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code close(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID close(asio::error_code& ec)
   {
-    return this->get_service().close(this->get_implementation(), ec);
+    this->get_service().close(this->get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Get the native serial port representation.
@@ -320,9 +325,10 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code cancel(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID cancel(asio::error_code& ec)
   {
-    return this->get_service().cancel(this->get_implementation(), ec);
+    this->get_service().cancel(this->get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Send a break sequence to the serial port.
@@ -346,9 +352,10 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code send_break(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID send_break(asio::error_code& ec)
   {
-    return this->get_service().send_break(this->get_implementation(), ec);
+    this->get_service().send_break(this->get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Set an option on the serial port.
@@ -390,11 +397,11 @@ public:
    * asio::serial_port_base::character_size
    */
   template <typename SettableSerialPortOption>
-  asio::error_code set_option(const SettableSerialPortOption& option,
+  ASIO_SYNC_OP_VOID set_option(const SettableSerialPortOption& option,
       asio::error_code& ec)
   {
-    return this->get_service().set_option(
-        this->get_implementation(), option, ec);
+    this->get_service().set_option(this->get_implementation(), option, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Get an option from the serial port.
@@ -438,11 +445,11 @@ public:
    * asio::serial_port_base::character_size
    */
   template <typename GettableSerialPortOption>
-  asio::error_code get_option(GettableSerialPortOption& option,
+  ASIO_SYNC_OP_VOID get_option(GettableSerialPortOption& option,
       asio::error_code& ec)
   {
-    return this->get_service().get_option(
-        this->get_implementation(), option, ec);
+    this->get_service().get_option(this->get_implementation(), option, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Write some data to the serial port.
@@ -675,5 +682,7 @@ public:
 
 #endif // defined(ASIO_HAS_SERIAL_PORT)
        //   || defined(GENERATING_DOCUMENTATION)
+
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #endif // ASIO_BASIC_SERIAL_PORT_HPP

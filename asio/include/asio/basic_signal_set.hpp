@@ -2,7 +2,7 @@
 // basic_signal_set.hpp
 // ~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,6 +16,8 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
+#if defined(ASIO_ENABLE_OLD_SERVICES)
 
 #include "asio/basic_io_object.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
@@ -211,11 +213,10 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code add(int signal_number,
-      asio::error_code& ec)
+  ASIO_SYNC_OP_VOID add(int signal_number, asio::error_code& ec)
   {
-    return this->get_service().add(
-        this->get_implementation(), signal_number, ec);
+    this->get_service().add(this->get_implementation(), signal_number, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Remove a signal from a signal_set.
@@ -249,11 +250,11 @@ public:
    * @note Removes any notifications that have been queued for the specified
    * signal number.
    */
-  asio::error_code remove(int signal_number,
+  ASIO_SYNC_OP_VOID remove(int signal_number,
       asio::error_code& ec)
   {
-    return this->get_service().remove(
-        this->get_implementation(), signal_number, ec);
+    this->get_service().remove(this->get_implementation(), signal_number, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Remove all signals from a signal_set.
@@ -281,9 +282,10 @@ public:
    *
    * @note Removes all queued notifications.
    */
-  asio::error_code clear(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID clear(asio::error_code& ec)
   {
-    return this->get_service().clear(this->get_implementation(), ec);
+    this->get_service().clear(this->get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Cancel all operations associated with the signal set.
@@ -335,9 +337,10 @@ public:
    * These handlers can no longer be cancelled, and therefore are passed an
    * error code that indicates the successful completion of the wait operation.
    */
-  asio::error_code cancel(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID cancel(asio::error_code& ec)
   {
-    return this->get_service().cancel(this->get_implementation(), ec);
+    this->get_service().cancel(this->get_implementation(), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Start an asynchronous operation to wait for a signal to be delivered.
@@ -382,5 +385,7 @@ public:
 } // namespace asio
 
 #include "asio/detail/pop_options.hpp"
+
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #endif // ASIO_BASIC_SIGNAL_SET_HPP

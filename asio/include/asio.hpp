@@ -2,7 +2,7 @@
 // asio.hpp
 // ~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -96,9 +96,11 @@
 #include "asio/local/connect_pair.hpp"
 #include "asio/local/datagram_protocol.hpp"
 #include "asio/local/stream_protocol.hpp"
+#include "asio/packaged_task.hpp"
 #include "asio/placeholders.hpp"
 #include "asio/posix/basic_descriptor.hpp"
 #include "asio/posix/basic_stream_descriptor.hpp"
+#include "asio/posix/descriptor.hpp"
 #include "asio/posix/descriptor_base.hpp"
 #include "asio/posix/stream_descriptor.hpp"
 #include "asio/posix/stream_descriptor_service.hpp"
@@ -123,6 +125,7 @@
 #include "asio/thread.hpp"
 #include "asio/thread_pool.hpp"
 #include "asio/time_traits.hpp"
+#include "asio/use_future.hpp"
 #include "asio/uses_executor.hpp"
 #include "asio/version.hpp"
 #include "asio/wait_traits.hpp"
@@ -133,6 +136,7 @@
 #include "asio/windows/basic_stream_handle.hpp"
 #include "asio/windows/object_handle.hpp"
 #include "asio/windows/object_handle_service.hpp"
+#include "asio/windows/overlapped_handle.hpp"
 #include "asio/windows/overlapped_ptr.hpp"
 #include "asio/windows/random_access_handle.hpp"
 #include "asio/windows/random_access_handle_service.hpp"

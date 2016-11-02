@@ -44,8 +44,12 @@ nobase_include_HEADERS = \
 	asio/detail/buffer_resize_guard.hpp \
 	asio/detail/buffer_sequence_adapter.hpp \
 	asio/detail/call_stack.hpp \
+	asio/detail/chrono.hpp \
 	asio/detail/chrono_time_traits.hpp \
 	asio/detail/completion_handler.hpp \
+	asio/detail/concurrency_hint.hpp \
+	asio/detail/conditionally_enabled_event.hpp \
+	asio/detail/conditionally_enabled_mutex.hpp \
 	asio/detail/config.hpp \
 	asio/detail/consuming_buffers.hpp \
 	asio/detail/cstddef.hpp \
@@ -86,6 +90,7 @@ nobase_include_HEADERS = \
 	asio/detail/impl/handler_tracking.ipp \
 	asio/detail/impl/kqueue_reactor.hpp \
 	asio/detail/impl/kqueue_reactor.ipp \
+	asio/detail/impl/null_event.ipp \
 	asio/detail/impl/pipe_select_interrupter.ipp \
 	asio/detail/impl/posix_event.ipp \
 	asio/detail/impl/posix_mutex.ipp \
@@ -127,6 +132,7 @@ nobase_include_HEADERS = \
 	asio/detail/impl/win_tss_ptr.ipp \
 	asio/detail/io_control.hpp \
 	asio/detail/is_buffer_sequence.hpp \
+	asio/detail/is_executor.hpp \
 	asio/detail/keyword_tss_ptr.hpp \
 	asio/detail/kqueue_reactor.hpp \
 	asio/detail/limits.hpp \
@@ -181,6 +187,7 @@ nobase_include_HEADERS = \
 	asio/detail/regex_fwd.hpp \
 	asio/detail/resolve_endpoint_op.hpp \
 	asio/detail/resolve_op.hpp \
+	asio/detail/resolve_query_op.hpp \
 	asio/detail/resolver_service_base.hpp \
 	asio/detail/resolver_service.hpp \
 	asio/detail/scheduler.hpp \
@@ -210,6 +217,7 @@ nobase_include_HEADERS = \
 	asio/detail/std_thread.hpp \
 	asio/detail/strand_executor_service.hpp \
 	asio/detail/strand_service.hpp \
+	asio/detail/string_view.hpp \
 	asio/detail/thread_context.hpp \
 	asio/detail/thread_group.hpp \
 	asio/detail/thread.hpp \
@@ -337,6 +345,7 @@ nobase_include_HEADERS = \
 	asio/ip/basic_resolver.hpp \
 	asio/ip/basic_resolver_iterator.hpp \
 	asio/ip/basic_resolver_query.hpp \
+	asio/ip/basic_resolver_results.hpp \
 	asio/ip/detail/endpoint.hpp \
 	asio/ip/detail/impl/endpoint.ipp \
 	asio/ip/detail/socket_option.hpp \
@@ -373,10 +382,11 @@ nobase_include_HEADERS = \
 	asio/local/detail/endpoint.hpp \
 	asio/local/detail/impl/endpoint.ipp \
 	asio/local/stream_protocol.hpp \
-	asio/package.hpp \
+	asio/packaged_task.hpp \
 	asio/placeholders.hpp \
 	asio/posix/basic_descriptor.hpp \
 	asio/posix/basic_stream_descriptor.hpp \
+	asio/posix/descriptor.hpp \
 	asio/posix/descriptor_base.hpp \
 	asio/posix/stream_descriptor.hpp \
 	asio/posix/stream_descriptor_service.hpp \
@@ -436,9 +446,9 @@ nobase_include_HEADERS = \
 	asio/ts/executor.hpp \
 	asio/ts/internet.hpp \
 	asio/ts/io_context.hpp \
-	asio/ts/networking.hpp \
+	asio/ts/netfwd.hpp \
+	asio/ts/net.hpp \
 	asio/ts/socket.hpp \
-	asio/ts/thread_pool.hpp \
 	asio/ts/timer.hpp \
 	asio/unyield.hpp \
 	asio/use_future.hpp \
@@ -452,6 +462,7 @@ nobase_include_HEADERS = \
 	asio/windows/basic_stream_handle.hpp \
 	asio/windows/object_handle.hpp \
 	asio/windows/object_handle_service.hpp \
+	asio/windows/overlapped_handle.hpp \
 	asio/windows/overlapped_ptr.hpp \
 	asio/windows/random_access_handle.hpp \
 	asio/windows/random_access_handle_service.hpp \

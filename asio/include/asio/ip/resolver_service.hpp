@@ -2,7 +2,7 @@
 // ip/resolver_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,6 +16,9 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
+#if defined(ASIO_ENABLE_OLD_SERVICES)
+
 #include "asio/async_result.hpp"
 #include "asio/error_code.hpp"
 #include "asio/io_context.hpp"
@@ -97,6 +100,23 @@ public:
     service_impl_.construct(impl);
   }
 
+#if defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
+  /// Move-construct a new resolver implementation.
+  void move_construct(implementation_type& impl,
+      implementation_type& other_impl)
+  {
+    service_impl_.move_construct(impl, other_impl);
+  }
+
+  /// Move-assign from another resolver implementation.
+  void move_assign(implementation_type& impl,
+      resolver_service& other_service,
+      implementation_type& other_impl)
+  {
+    service_impl_.move_assign(impl, other_service.service_impl_, other_impl);
+  }
+#endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
+
   /// Destroy a resolver implementation.
   void destroy(implementation_type& impl)
   {
@@ -126,7 +146,7 @@ public:
     asio::async_completion<ResolveHandler,
       void (asio::error_code, results_type)> init(handler);
 
-    service_impl_.async_resolve(impl, query, init.handler);
+    service_impl_.async_resolve(impl, query, init.completion_handler);
 
     return init.result.get();
   }
@@ -148,7 +168,7 @@ public:
     asio::async_completion<ResolveHandler,
       void (asio::error_code, results_type)> init(handler);
 
-    service_impl_.async_resolve(impl, endpoint, init.handler);
+    service_impl_.async_resolve(impl, endpoint, init.completion_handler);
 
     return init.result.get();
   }
@@ -174,5 +194,7 @@ private:
 } // namespace asio
 
 #include "asio/detail/pop_options.hpp"
+
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #endif // ASIO_IP_RESOLVER_SERVICE_HPP

@@ -2,7 +2,7 @@
 // buffered_write_stream.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -128,9 +128,10 @@ public:
   }
 
   /// Close the stream.
-  asio::error_code close(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID close(asio::error_code& ec)
   {
-    return next_layer_.close(ec);
+    next_layer_.close(ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Flush all data from the buffer to the next layer. Returns the number of
@@ -193,14 +194,8 @@ public:
   async_read_some(const MutableBufferSequence& buffers,
       ASIO_MOVE_ARG(ReadHandler) handler)
   {
-    async_completion<ReadHandler,
-      void (asio::error_code, std::size_t)> init(handler);
-
-    next_layer_.async_read_some(buffers,
-        ASIO_MOVE_CAST(ASIO_HANDLER_TYPE(ReadHandler,
-            void (asio::error_code, std::size_t)))(init.handler));
-
-    return init.result.get();
+    return next_layer_.async_read_some(buffers,
+        ASIO_MOVE_CAST(ReadHandler)(handler));
   }
 
   /// Peek at the incoming data on the stream. Returns the number of bytes read.

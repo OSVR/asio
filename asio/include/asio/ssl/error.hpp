@@ -2,7 +2,7 @@
 // ssl/error.hpp
 // ~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -40,8 +40,14 @@ namespace error {
 
 enum stream_errors
 {
+#if defined(GENERATING_DOCUMENTATION)
   /// The underlying stream closed before the ssl stream gracefully shut down.
+  stream_truncated
+#elif (OPENSSL_VERSION_NUMBER < 0x10100000L) && !defined(OPENSSL_IS_BORINGSSL)
+  stream_truncated = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_SHORT_READ)
+#else
   stream_truncated = 1
+#endif
 };
 
 extern ASIO_DECL

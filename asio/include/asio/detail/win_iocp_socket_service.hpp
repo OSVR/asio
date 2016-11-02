@@ -2,7 +2,7 @@
 // detail/win_iocp_socket_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -50,7 +50,9 @@ namespace asio {
 namespace detail {
 
 template <typename Protocol>
-class win_iocp_socket_service : public win_iocp_socket_service_base
+class win_iocp_socket_service :
+  public service_base<win_iocp_socket_service<Protocol> >,
+  public win_iocp_socket_service_base
 {
 public:
   // The protocol type.
@@ -128,8 +130,15 @@ public:
 
   // Constructor.
   win_iocp_socket_service(asio::io_context& io_context)
-    : win_iocp_socket_service_base(io_context)
+    : service_base<win_iocp_socket_service<Protocol> >(io_context),
+      win_iocp_socket_service_base(io_context)
   {
+  }
+
+  // Destroy all user-defined handler objects owned by the service.
+  void shutdown()
+  {
+    this->base_shutdown();
   }
 
   // Move-construct a new socket implementation.
@@ -277,6 +286,14 @@ public:
     return endpoint;
   }
 
+  // Disable sends or receives on the socket.
+  asio::error_code shutdown(base_implementation_type& impl,
+      socket_base::shutdown_type what, asio::error_code& ec)
+  {
+    socket_ops::shutdown(impl.socket_, what, ec);
+    return ec;
+  }
+
   // Send a datagram to the specified endpoint. Returns the number of bytes
   // sent.
   template <typename ConstBufferSequence>
@@ -298,7 +315,7 @@ public:
       asio::error_code& ec)
   {
     // Wait for socket to become ready.
-    socket_ops::poll_write(impl.socket_, impl.state_, ec);
+    socket_ops::poll_write(impl.socket_, impl.state_, -1, ec);
 
     return 0;
   }
@@ -374,7 +391,7 @@ public:
       socket_base::message_flags, asio::error_code& ec)
   {
     // Wait for socket to become ready.
-    socket_ops::poll_read(impl.socket_, impl.state_, ec);
+    socket_ops::poll_read(impl.socket_, impl.state_, -1, ec);
 
     // Reset endpoint since it can be given no sensible value at this time.
     sender_endpoint = endpoint_type();
@@ -452,7 +469,8 @@ public:
     {
       if (peer_endpoint)
         peer_endpoint->resize(addr_len);
-      if (!peer.assign(impl.protocol_, new_socket.get(), ec))
+      peer.assign(impl.protocol_, new_socket.get(), ec);
+      if (!ec)
         new_socket.release();
     }
 
@@ -478,7 +496,8 @@ public:
     {
       if (peer_endpoint)
         peer_endpoint->resize(addr_len);
-      if (!peer.assign(impl.protocol_, new_socket.get(), ec))
+      peer.assign(impl.protocol_, new_socket.get(), ec);
+      if (!ec)
         new_socket.release();
     }
 

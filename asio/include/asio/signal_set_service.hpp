@@ -2,7 +2,7 @@
 // signal_set_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,6 +16,9 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
+#if defined(ASIO_ENABLE_OLD_SERVICES)
+
 #include "asio/async_result.hpp"
 #include "asio/detail/signal_set_service.hpp"
 #include "asio/error.hpp"
@@ -67,31 +70,35 @@ public:
   }
 
   /// Add a signal to a signal_set.
-  asio::error_code add(implementation_type& impl,
+  ASIO_SYNC_OP_VOID add(implementation_type& impl,
       int signal_number, asio::error_code& ec)
   {
-    return service_impl_.add(impl, signal_number, ec);
+    service_impl_.add(impl, signal_number, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Remove a signal to a signal_set.
-  asio::error_code remove(implementation_type& impl,
+  ASIO_SYNC_OP_VOID remove(implementation_type& impl,
       int signal_number, asio::error_code& ec)
   {
-    return service_impl_.remove(impl, signal_number, ec);
+    service_impl_.remove(impl, signal_number, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Remove all signals from a signal_set.
-  asio::error_code clear(implementation_type& impl,
+  ASIO_SYNC_OP_VOID clear(implementation_type& impl,
       asio::error_code& ec)
   {
-    return service_impl_.clear(impl, ec);
+    service_impl_.clear(impl, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Cancel all operations associated with the signal set.
-  asio::error_code cancel(implementation_type& impl,
+  ASIO_SYNC_OP_VOID cancel(implementation_type& impl,
       asio::error_code& ec)
   {
-    return service_impl_.cancel(impl, ec);
+    service_impl_.cancel(impl, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   // Start an asynchronous operation to wait for a signal to be delivered.
@@ -104,7 +111,7 @@ public:
     async_completion<SignalHandler,
       void (asio::error_code, int)> init(handler);
 
-    service_impl_.async_wait(impl, init.handler);
+    service_impl_.async_wait(impl, init.completion_handler);
 
     return init.result.get();
   }
@@ -129,5 +136,7 @@ private:
 } // namespace asio
 
 #include "asio/detail/pop_options.hpp"
+
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #endif // ASIO_SIGNAL_SET_SERVICE_HPP

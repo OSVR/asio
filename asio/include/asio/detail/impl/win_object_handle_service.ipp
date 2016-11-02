@@ -2,7 +2,7 @@
 // detail/impl/win_object_handle_service.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2011 Boris Schaeling (boris@highscore.de)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -29,7 +29,8 @@ namespace detail {
 
 win_object_handle_service::win_object_handle_service(
     asio::io_context& io_context)
-  : io_context_(asio::use_service<io_context_impl>(io_context)),
+  : service_base<win_object_handle_service>(io_context),
+    io_context_(asio::use_service<io_context_impl>(io_context)),
     mutex_(),
     impl_list_(0),
     shutdown_(false)

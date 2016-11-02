@@ -2,7 +2,7 @@
 // stream_protocol.cpp
 // ~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -77,8 +77,13 @@ void test()
 
     // basic_io_object functions.
 
+#if !defined(ASIO_NO_DEPRECATED)
     io_context& ioc_ref = socket1.get_io_context();
     (void)ioc_ref;
+#endif // !defined(ASIO_NO_DEPRECATED)
+
+    sp::socket::executor_type ex = socket1.get_executor();
+    (void)ex;
 
     // basic_socket functions.
 

@@ -2,7 +2,7 @@
 // detail/dev_poll_reactor.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -158,7 +158,7 @@ private:
   // Get the timeout value for the /dev/poll DP_POLL operation. The timeout
   // value is returned as a number of milliseconds. A return value of -1
   // indicates that the poll should block indefinitely.
-  ASIO_DECL int get_timeout();
+  ASIO_DECL int get_timeout(int msec);
 
   // Cancel all operations associated with the given descriptor. The do_cancel
   // function of the handler objects will be invoked. This function does not

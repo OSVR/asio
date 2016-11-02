@@ -2,7 +2,7 @@
 // detail/impl/kqueue_reactor.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2005 Stefan Arentz (stefan at soze dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -42,10 +42,12 @@ namespace detail {
 kqueue_reactor::kqueue_reactor(asio::execution_context& ctx)
   : execution_context_service_base<kqueue_reactor>(ctx),
     scheduler_(use_service<scheduler>(ctx)),
-    mutex_(),
+    mutex_(ASIO_CONCURRENCY_HINT_IS_LOCKING(
+          SCHEDULER, scheduler_.concurrency_hint())),
     kqueue_fd_(do_kqueue_create()),
     interrupter_(),
-    shutdown_(false)
+    shutdown_(false),
+    registered_descriptors_mutex_(mutex_.enabled())
 {
   struct kevent events[1];
   ASIO_KQUEUE_EV_SET(&events[0], interrupter_.read_descriptor(),
@@ -367,13 +369,13 @@ void kqueue_reactor::deregister_internal_descriptor(socket_type descriptor,
   }
 }
 
-void kqueue_reactor::run(bool block, op_queue<operation>& ops)
+void kqueue_reactor::run(long usec, op_queue<operation>& ops)
 {
   mutex::scoped_lock lock(mutex_);
 
   // Determine how long to block while waiting for events.
   timespec timeout_buf = { 0, 0 };
-  timespec* timeout = block ? get_timeout(timeout_buf) : &timeout_buf;
+  timespec* timeout = usec ? get_timeout(usec, timeout_buf) : &timeout_buf;
 
   lock.unlock();
 
@@ -496,7 +498,7 @@ int kqueue_reactor::do_kqueue_create()
 kqueue_reactor::descriptor_state* kqueue_reactor::allocate_descriptor_state()
 {
   mutex::scoped_lock descriptors_lock(registered_descriptors_mutex_);
-  return registered_descriptors_.alloc();
+  return registered_descriptors_.alloc(registered_descriptors_mutex_.enabled());
 }
 
 void kqueue_reactor::free_descriptor_state(kqueue_reactor::descriptor_state* s)
@@ -517,11 +519,13 @@ void kqueue_reactor::do_remove_timer_queue(timer_queue_base& queue)
   timer_queues_.erase(&queue);
 }
 
-timespec* kqueue_reactor::get_timeout(timespec& ts)
+timespec* kqueue_reactor::get_timeout(long usec, timespec& ts)
 {
   // By default we will wait no longer than 5 minutes. This will ensure that
   // any changes to the system clock are detected after no longer than this.
-  long usec = timer_queues_.wait_duration_usec(5 * 60 * 1000 * 1000);
+  const long max_usec = 5 * 60 * 1000 * 1000;
+  usec = timer_queues_.wait_duration_usec(
+      (usec < 0 || max_usec < usec) ? max_usec : usec);
   ts.tv_sec = usec / 1000000;
   ts.tv_nsec = (usec % 1000000) * 1000;
   return &ts;

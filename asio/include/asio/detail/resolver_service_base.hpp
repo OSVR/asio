@@ -2,7 +2,7 @@
 // detail/resolver_service_base.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,10 +17,11 @@
 
 #include "asio/detail/config.hpp"
 #include "asio/error.hpp"
+#include "asio/executor_work_guard.hpp"
 #include "asio/io_context.hpp"
 #include "asio/detail/mutex.hpp"
 #include "asio/detail/noncopyable.hpp"
-#include "asio/detail/operation.hpp"
+#include "asio/detail/resolve_op.hpp"
 #include "asio/detail/socket_ops.hpp"
 #include "asio/detail/socket_types.hpp"
 #include "asio/detail/scoped_ptr.hpp"
@@ -45,10 +46,10 @@ public:
   ASIO_DECL ~resolver_service_base();
 
   // Destroy all user-defined handler objects owned by the service.
-  ASIO_DECL void shutdown();
+  ASIO_DECL void base_shutdown();
 
   // Perform any fork-related housekeeping.
-  ASIO_DECL void notify_fork(
+  ASIO_DECL void base_notify_fork(
       asio::io_context::fork_event fork_ev);
 
   // Construct a new resolver implementation.
@@ -57,12 +58,21 @@ public:
   // Destroy a resolver implementation.
   ASIO_DECL void destroy(implementation_type&);
 
+  // Move-construct a new resolver implementation.
+  ASIO_DECL void move_construct(implementation_type& impl,
+      implementation_type& other_impl);
+
+  // Move-assign from another resolver implementation.
+  ASIO_DECL void move_assign(implementation_type& impl,
+      resolver_service_base& other_service,
+      implementation_type& other_impl);
+
   // Cancel pending asynchronous operations.
   ASIO_DECL void cancel(implementation_type& impl);
 
 protected:
   // Helper function to start an asynchronous resolve operation.
-  ASIO_DECL void start_resolve_op(operation* op);
+  ASIO_DECL void start_resolve_op(resolve_op* op);
 
 #if !defined(ASIO_WINDOWS_RUNTIME)
   // Helper class to perform exception-safe cleanup of addrinfo objects.
@@ -111,7 +121,8 @@ private:
   io_context_impl& work_io_context_impl_;
 
   // Work for the private io_context to perform.
-  asio::detail::scoped_ptr<asio::io_context::work> work_;
+  asio::executor_work_guard<
+      asio::io_context::executor_type> work_;
 
   // Thread used for running the work io_context's run loop.
   asio::detail::scoped_ptr<asio::detail::thread> work_thread_;

@@ -2,7 +2,7 @@
 // detail/config.hpp
 // ~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -65,7 +65,8 @@
 #if !defined(ASIO_MSVC)
 # if defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_MSVC)
 #  define ASIO_MSVC BOOST_MSVC
-# elif defined(_MSC_VER) && !defined(__MWERKS__) && !defined(__EDG_VERSION__)
+# elif defined(_MSC_VER) && (defined(__INTELLISENSE__) \
+      || (!defined(__MWERKS__) && !defined(__EDG_VERSION__)))
 #  define ASIO_MSVC _MSC_VER
 # endif // defined(ASIO_HAS_BOOST_CONFIG) && defined(BOOST_MSVC)
 #endif // defined(ASIO_MSVC)
@@ -155,6 +156,11 @@
 #    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
 #   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 4)
 #  endif // defined(__GNUC__)
+#  if defined(ASIO_MSVC) && !defined(__clang__)
+#    if (_MSC_VER >= 1800)
+#      define ASIO_HAS_VARIADIC_TEMPLATES 1
+#    endif // (_MSC_VER >= 1800)
+#  endif // defined(ASIO_MSVC) && !defined(__clang__)
 # endif // !defined(ASIO_DISABLE_VARIADIC_TEMPLATES)
 #endif // !defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
@@ -172,6 +178,11 @@
 #   define ASIO_DELETED = delete
 #  endif // __has_feature(__cxx_deleted_functions__)
 # endif // defined(__clang__)
+# if defined(ASIO_MSVC) && !defined(__clang__)
+#  if (_MSC_VER >= 1800)
+#   define ASIO_DELETED = delete
+#  endif // (_MSC_VER >= 1800)
+# endif // defined(ASIO_MSVC) && !defined(__clang__)
 # if !defined(ASIO_DELETED)
 #  define ASIO_DELETED
 # endif // !defined(ASIO_DELETED)
@@ -224,6 +235,10 @@
 #   if (_MSC_VER >= 1900)
 #    define ASIO_NOEXCEPT noexcept(true)
 #    define ASIO_NOEXCEPT_OR_NOTHROW noexcept(true)
+#   elif (_MSC_VER >= 1700)
+// "weird way of spelling noexcept"
+#    define ASIO_NOEXCEPT throw()
+#    define ASIO_NOEXCEPT_OR_NOTHROW throw()
 #   endif // (_MSC_VER >= 1900)
 #  endif // defined(ASIO_MSVC)
 # endif // !defined(ASIO_DISABLE_NOEXCEPT)
@@ -675,6 +690,55 @@
 # endif // !defined(ASIO_DISABLE_STD_CALL_ONCE)
 #endif // !defined(ASIO_HAS_STD_CALL_ONCE)
 
+// Standard library support for futures.
+#if !defined(ASIO_HAS_STD_FUTURE)
+# if !defined(ASIO_DISABLE_STD_FUTURE)
+#  if defined(__clang__)
+#   if defined(ASIO_HAS_CLANG_LIBCXX)
+#    define ASIO_HAS_STD_FUTURE 1
+#   elif (__cplusplus >= 201103)
+#    if __has_include(<future>)
+#     define ASIO_HAS_STD_FUTURE 1
+#    endif // __has_include(<mutex>)
+#   endif // (__cplusplus >= 201103)
+#  endif // defined(__clang__)
+#  if defined(__GNUC__)
+#   if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4)
+#    if defined(__GXX_EXPERIMENTAL_CXX0X__)
+#     define ASIO_HAS_STD_FUTURE 1
+#    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
+#   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4)
+#  endif // defined(__GNUC__)
+#  if defined(ASIO_MSVC)
+#   if (_MSC_VER >= 1700)
+#    define ASIO_HAS_STD_FUTURE 1
+#   endif // (_MSC_VER >= 1700)
+#  endif // defined(ASIO_MSVC)
+# endif // !defined(ASIO_DISABLE_STD_FUTURE)
+#endif // !defined(ASIO_HAS_STD_FUTURE)
+
+// Standard library support for experimental::string_view.
+#if !defined(ASIO_HAS_STD_STRING_VIEW)
+# if !defined(ASIO_DISABLE_STD_STRING_VIEW)
+#  if defined(__clang__)
+#   if (__cplusplus >= 201103)
+#    if __has_include(<experimental/string_view>)
+#     define ASIO_HAS_STD_STRING_VIEW 1
+#     define ASIO_HAS_STD_EXPERIMENTAL_STRING_VIEW 1
+#    endif // __has_include(<experimental/string_view>)
+#   endif // (__cplusplus >= 201103)
+#  endif // defined(__clang__)
+#  if defined(__GNUC__)
+#   if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 9)) || (__GNUC__ > 4)
+#    if (__cplusplus >= 201300)
+#     define ASIO_HAS_STD_STRING_VIEW 1
+#     define ASIO_HAS_STD_EXPERIMENTAL_STRING_VIEW 1
+#    endif // (__cplusplus >= 201300)
+#   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)) || (__GNUC__ > 4)
+#  endif // defined(__GNUC__)
+# endif // !defined(ASIO_DISABLE_STD_STRING_VIEW)
+#endif // !defined(ASIO_HAS_STD_STRING_VIEW)
+
 // Windows App target. Windows but with a limited API.
 #if !defined(ASIO_WINDOWS_APP)
 # if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0603)
@@ -963,15 +1027,25 @@
 
 // Can use getaddrinfo() and getnameinfo().
 #if !defined(ASIO_HAS_GETADDRINFO)
-# if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
-#  if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0501)
+# if !defined(ASIO_DISABLE_GETADDRINFO)
+#  if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
+#   if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0501)
+#    define ASIO_HAS_GETADDRINFO 1
+#   elif defined(UNDER_CE)
+#    define ASIO_HAS_GETADDRINFO 1
+#   endif // defined(UNDER_CE)
+#  elif defined(__MACH__) && defined(__APPLE__)
+#   if defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+#    if (__MAC_OS_X_VERSION_MIN_REQUIRED >= 1050)
+#     define ASIO_HAS_GETADDRINFO 1
+#    endif // (__MAC_OS_X_VERSION_MIN_REQUIRED >= 1050)
+#   else // defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+#    define ASIO_HAS_GETADDRINFO 1
+#   endif // defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+#  else // defined(__MACH__) && defined(__APPLE__)
 #   define ASIO_HAS_GETADDRINFO 1
-#  elif defined(UNDER_CE)
-#   define ASIO_HAS_GETADDRINFO 1
-#  endif // defined(UNDER_CE)
-# elif !(defined(__MACH__) && defined(__APPLE__))
-#  define ASIO_HAS_GETADDRINFO 1
-# endif // !(defined(__MACH__) && defined(__APPLE__))
+#  endif // defined(__MACH__) && defined(__APPLE__)
+# endif // !defined(ASIO_DISABLE_GETADDRINFO)
 #endif // !defined(ASIO_HAS_GETADDRINFO)
 
 // Whether standard iostreams are disabled.
@@ -1152,5 +1226,41 @@
 # endif // defined(__linux__)
         //   || (defined(__MACH__) && defined(__APPLE__))
 #endif // !defined(ASIO_DISABLE_SSIZE_T)
+
+// Helper macros to manage the transition away from the old services-based API.
+#if defined(ASIO_ENABLE_OLD_SERVICES)
+# define ASIO_SVC_TPARAM , typename Service
+# define ASIO_SVC_TPARAM_DEF1(d1) , typename Service d1
+# define ASIO_SVC_TPARAM_DEF2(d1, d2) , typename Service d1, d2
+# define ASIO_SVC_TARG , Service
+# define ASIO_SVC_T Service
+# define ASIO_SVC_TPARAM1 , typename Service1
+# define ASIO_SVC_TPARAM1_DEF1(d1) , typename Service1 d1
+# define ASIO_SVC_TPARAM1_DEF2(d1, d2) , typename Service1 d1, d2
+# define ASIO_SVC_TARG1 , Service1
+# define ASIO_SVC_T1 Service1
+# define ASIO_SVC_ACCESS public
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+# define ASIO_SVC_TPARAM
+# define ASIO_SVC_TPARAM_DEF1(d1)
+# define ASIO_SVC_TPARAM_DEF2(d1, d2)
+# define ASIO_SVC_TARG
+// ASIO_SVC_T is defined at each point of use.
+# define ASIO_SVC_TPARAM1
+# define ASIO_SVC_TPARAM1_DEF1(d1)
+# define ASIO_SVC_TPARAM1_DEF2(d1, d2)
+# define ASIO_SVC_TARG1
+// ASIO_SVC_T1 is defined at each point of use.
+# define ASIO_SVC_ACCESS protected
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
+
+// Helper macros to manage transition away from error_code return values.
+#if defined(ASIO_NO_DEPRECATED)
+# define ASIO_SYNC_OP_VOID void
+# define ASIO_SYNC_OP_VOID_RETURN(e) return
+#else // defined(ASIO_NO_DEPRECATED)
+# define ASIO_SYNC_OP_VOID asio::error_code
+# define ASIO_SYNC_OP_VOID_RETURN(e) return e
+#endif // defined(ASIO_NO_DEPRECATED)
 
 #endif // ASIO_DETAIL_CONFIG_HPP

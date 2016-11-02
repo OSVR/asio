@@ -2,7 +2,7 @@
 // detail/winrt_resolver_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -34,7 +34,8 @@ namespace asio {
 namespace detail {
 
 template <typename Protocol>
-class winrt_resolver_service
+class winrt_resolver_service :
+  public service_base<winrt_resolver_service<Protocol> >
 {
 public:
   // The implementation type of the resolver. A cancellation token is used to
@@ -53,7 +54,8 @@ public:
 
   // Constructor.
   winrt_resolver_service(asio::io_context& io_context)
-    : io_context_(use_service<io_context_impl>(io_context)),
+    : service_base<winrt_resolver_service<Protocol> >(io_context),
+      io_context_(use_service<io_context_impl>(io_context)),
       async_manager_(use_service<winrt_async_manager>(io_context))
   {
   }
@@ -75,6 +77,18 @@ public:
 
   // Construct a new resolver implementation.
   void construct(implementation_type&)
+  {
+  }
+
+  // Move-construct a new resolver implementation.
+  void move_construct(implementation_type&,
+      implementation_type&)
+  {
+  }
+
+  // Move-assign from another resolver implementation.
+  void move_assign(implementation_type&,
+      winrt_resolver_service&, implementation_type&)
   {
   }
 

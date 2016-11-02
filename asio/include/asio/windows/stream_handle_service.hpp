@@ -2,7 +2,7 @@
 // windows/stream_handle_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,6 +16,8 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
+#if defined(ASIO_ENABLE_OLD_SERVICES)
 
 #if defined(ASIO_HAS_WINDOWS_STREAM_HANDLE) \
   || defined(GENERATING_DOCUMENTATION)
@@ -101,10 +103,11 @@ public:
   }
 
   /// Assign an existing native handle to a stream handle.
-  asio::error_code assign(implementation_type& impl,
+  ASIO_SYNC_OP_VOID assign(implementation_type& impl,
       const native_handle_type& handle, asio::error_code& ec)
   {
-    return service_impl_.assign(impl, handle, ec);
+    service_impl_.assign(impl, handle, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Determine whether the handle is open.
@@ -114,10 +117,11 @@ public:
   }
 
   /// Close a stream handle implementation.
-  asio::error_code close(implementation_type& impl,
+  ASIO_SYNC_OP_VOID close(implementation_type& impl,
       asio::error_code& ec)
   {
-    return service_impl_.close(impl, ec);
+    service_impl_.close(impl, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Get the native handle implementation.
@@ -127,10 +131,11 @@ public:
   }
 
   /// Cancel all asynchronous operations associated with the handle.
-  asio::error_code cancel(implementation_type& impl,
+  ASIO_SYNC_OP_VOID cancel(implementation_type& impl,
       asio::error_code& ec)
   {
-    return service_impl_.cancel(impl, ec);
+    service_impl_.cancel(impl, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Write the given data to the stream.
@@ -152,7 +157,7 @@ public:
     asio::async_completion<WriteHandler,
       void (asio::error_code, std::size_t)> init(handler);
 
-    service_impl_.async_write_some(impl, buffers, init.handler);
+    service_impl_.async_write_some(impl, buffers, init.completion_handler);
 
     return init.result.get();
   }
@@ -176,7 +181,7 @@ public:
     asio::async_completion<ReadHandler,
       void (asio::error_code, std::size_t)> init(handler);
 
-    service_impl_.async_read_some(impl, buffers, init.handler);
+    service_impl_.async_read_some(impl, buffers, init.completion_handler);
 
     return init.result.get();
   }
@@ -199,5 +204,7 @@ private:
 
 #endif // defined(ASIO_HAS_WINDOWS_STREAM_HANDLE)
        //   || defined(GENERATING_DOCUMENTATION)
+
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #endif // ASIO_WINDOWS_STREAM_HANDLE_SERVICE_HPP

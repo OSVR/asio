@@ -2,7 +2,7 @@
 // detail/impl/reactive_serial_port_service.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2008 Rep Invariant Systems, Inc. (info@repinvariant.com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -31,7 +31,8 @@ namespace detail {
 
 reactive_serial_port_service::reactive_serial_port_service(
     asio::io_context& io_context)
-  : descriptor_service_(io_context)
+  : service_base<reactive_serial_port_service>(io_context),
+    descriptor_service_(io_context)
 {
 }
 

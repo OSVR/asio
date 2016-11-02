@@ -2,7 +2,7 @@
 // io_context.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -24,7 +24,10 @@
 #include "asio/detail/wrapped_handler.hpp"
 #include "asio/error_code.hpp"
 #include "asio/execution_context.hpp"
-#include "asio/is_executor.hpp"
+
+#if defined(ASIO_HAS_CHRONO)
+# include "asio/detail/chrono.hpp"
+#endif // defined(ASIO_HAS_CHRONO)
 
 #if defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 # include "asio/detail/winsock_init.hpp"
@@ -120,10 +123,12 @@ namespace detail {
  * returning when there is no more work to do. For example, the io_context may
  * be being run in a background thread that is launched prior to the
  * application's asynchronous operations. The run() call may be kept running by
- * creating an object of type asio::io_context::work:
+ * creating an object of type
+ * asio::executor_work_guard<io_context::executor_type>:
  *
  * @code asio::io_context io_context;
- * asio::io_context::work work(io_context);
+ * asio::executor_work_guard<asio::io_context::executor_type>
+ *   = asio::make_work_guard(io_context);
  * ... @endcode
  *
  * To effect a shutdown, the application will then need to call the io_context
@@ -132,11 +137,11 @@ namespace detail {
  * permitting ready handlers to be dispatched.
  *
  * Alternatively, if the application requires that all operations and handlers
- * be allowed to finish normally, the work object may be explicitly destroyed.
+ * be allowed to finish normally, the work object may be explicitly reset.
  *
  * @code asio::io_context io_context;
- * auto_ptr<asio::io_context::work> work(
- *     new asio::io_context::work(io_context));
+ * asio::executor_work_guard<asio::io_context::executor_type>
+ *   = asio::make_work_guard(io_context);
  * ...
  * work.reset(); // Allow run() to exit. @endcode
  */
@@ -153,12 +158,19 @@ public:
   class executor_type;
   friend class executor_type;
 
+#if !defined(ASIO_NO_DEPRECATED)
   class work;
   friend class work;
+#endif // !defined(ASIO_NO_DEPRECATED)
 
   class service;
 
+#if !defined(ASIO_NO_EXTENSIONS)
   class strand;
+#endif // !defined(ASIO_NO_EXTENSIONS)
+
+  /// The type used to count the number of handlers executed by the context.
+  typedef std::size_t count_type;
 
   /// Constructor.
   ASIO_DECL io_context();
@@ -226,8 +238,6 @@ public:
    *
    * @return The number of handlers that were executed.
    *
-   * @throws asio::system_error Thrown on failure.
-   *
    * @note The run() function must not be called from a thread that is currently
    * calling one of run(), run_one(), poll() or poll_one() on the same
    * io_context object.
@@ -235,9 +245,11 @@ public:
    * The poll() function may also be used to dispatch ready handlers, but
    * without blocking.
    */
-  ASIO_DECL std::size_t run();
+  ASIO_DECL count_type run();
 
-  /// Run the io_context object's event processing loop.
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use non-error_code overload.) Run the io_context object's
+  /// event processing loop.
   /**
    * The run() function blocks until all work has finished and there are no
    * more handlers to be dispatched, or until the io_context has been stopped.
@@ -263,7 +275,37 @@ public:
    * The poll() function may also be used to dispatch ready handlers, but
    * without blocking.
    */
-  ASIO_DECL std::size_t run(asio::error_code& ec);
+  ASIO_DECL count_type run(asio::error_code& ec);
+#endif // !defined(ASIO_NO_DEPRECATED)
+
+#if defined(ASIO_HAS_CHRONO) || defined(GENERATING_DOCUMENTATION)
+  /// Run the io_context object's event processing loop for a specified
+  /// duration.
+  /**
+   * The run_for() function blocks until all work has finished and there are no
+   * more handlers to be dispatched, until the io_context has been stopped, or
+   * until the specified duration has elapsed.
+   *
+   * @param rel_time The duration for which the call may block.
+   *
+   * @return The number of handlers that were executed.
+   */
+  template <typename Rep, typename Period>
+  std::size_t run_for(const chrono::duration<Rep, Period>& rel_time);
+
+  /// Run the io_context object's event processing loop until a specified time.
+  /**
+   * The run_until() function blocks until all work has finished and there are
+   * no more handlers to be dispatched, until the io_context has been stopped,
+   * or until the specified time has been reached.
+   *
+   * @param abs_time The time point until which the call may block.
+   *
+   * @return The number of handlers that were executed.
+   */
+  template <typename Clock, typename Duration>
+  std::size_t run_until(const chrono::time_point<Clock, Duration>& abs_time);
+#endif // defined(ASIO_HAS_CHRONO) || defined(GENERATING_DOCUMENTATION)
 
   /// Run the io_context object's event processing loop to execute at most one
   /// handler.
@@ -276,13 +318,12 @@ public:
    * returns @c true). Subsequent calls to run(), run_one(), poll() or
    * poll_one() will return immediately unless there is a prior call to
    * restart().
-   *
-   * @throws asio::system_error Thrown on failure.
    */
-  ASIO_DECL std::size_t run_one();
+  ASIO_DECL count_type run_one();
 
-  /// Run the io_context object's event processing loop to execute at most one
-  /// handler.
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use non-error_code overlaod.) Run the io_context object's
+  /// event processing loop to execute at most one handler.
   /**
    * The run_one() function blocks until one handler has been dispatched, or
    * until the io_context has been stopped.
@@ -295,7 +336,39 @@ public:
    *
    * @return The number of handlers that were executed.
    */
-  ASIO_DECL std::size_t run_one(asio::error_code& ec);
+  ASIO_DECL count_type run_one(asio::error_code& ec);
+#endif // !defined(ASIO_NO_DEPRECATED)
+
+#if defined(ASIO_HAS_CHRONO) || defined(GENERATING_DOCUMENTATION)
+  /// Run the io_context object's event processing loop for a specified duration
+  /// to execute at most one handler.
+  /**
+   * The run_one_for() function blocks until one handler has been dispatched,
+   * until the io_context has been stopped, or until the specified duration has
+   * elapsed.
+   *
+   * @param rel_time The duration for which the call may block.
+   *
+   * @return The number of handlers that were executed.
+   */
+  template <typename Rep, typename Period>
+  std::size_t run_one_for(const chrono::duration<Rep, Period>& rel_time);
+
+  /// Run the io_context object's event processing loop until a specified time
+  /// to execute at most one handler.
+  /**
+   * The run_one_until() function blocks until one handler has been dispatched,
+   * until the io_context has been stopped, or until the specified time has
+   * been reached.
+   *
+   * @param abs_time The time point until which the call may block.
+   *
+   * @return The number of handlers that were executed.
+   */
+  template <typename Clock, typename Duration>
+  std::size_t run_one_until(
+      const chrono::time_point<Clock, Duration>& abs_time);
+#endif // defined(ASIO_HAS_CHRONO) || defined(GENERATING_DOCUMENTATION)
 
   /// Run the io_context object's event processing loop to execute ready
   /// handlers.
@@ -304,13 +377,12 @@ public:
    * until the io_context has been stopped or there are no more ready handlers.
    *
    * @return The number of handlers that were executed.
-   *
-   * @throws asio::system_error Thrown on failure.
    */
-  ASIO_DECL std::size_t poll();
+  ASIO_DECL count_type poll();
 
-  /// Run the io_context object's event processing loop to execute ready
-  /// handlers.
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use non-error_code overload.) Run the io_context object's
+  /// event processing loop to execute ready handlers.
   /**
    * The poll() function runs handlers that are ready to run, without blocking,
    * until the io_context has been stopped or there are no more ready handlers.
@@ -319,7 +391,8 @@ public:
    *
    * @return The number of handlers that were executed.
    */
-  ASIO_DECL std::size_t poll(asio::error_code& ec);
+  ASIO_DECL count_type poll(asio::error_code& ec);
+#endif // !defined(ASIO_NO_DEPRECATED)
 
   /// Run the io_context object's event processing loop to execute one ready
   /// handler.
@@ -328,13 +401,12 @@ public:
    * without blocking.
    *
    * @return The number of handlers that were executed.
-   *
-   * @throws asio::system_error Thrown on failure.
    */
-  ASIO_DECL std::size_t poll_one();
+  ASIO_DECL count_type poll_one();
 
-  /// Run the io_context object's event processing loop to execute one ready
-  /// handler.
+#if !defined(ASIO_NO_DEPRECATED)
+  /// (Deprecated: Use non-error_code overload.) Run the io_context object's
+  /// event processing loop to execute one ready handler.
   /**
    * The poll_one() function runs at most one handler that is ready to run,
    * without blocking.
@@ -343,7 +415,8 @@ public:
    *
    * @return The number of handlers that were executed.
    */
-  ASIO_DECL std::size_t poll_one(asio::error_code& ec);
+  ASIO_DECL count_type poll_one(asio::error_code& ec);
+#endif // !defined(ASIO_NO_DEPRECATED)
 
   /// Stop the io_context object's event processing loop.
   /**
@@ -611,11 +684,7 @@ private:
   io_context& io_context_;
 };
 
-#if !defined(GENERATING_DOCUMENTATION)
-template <> struct is_executor<io_context::executor_type> : true_type {};
-#endif // !defined(GENERATING_DOCUMENTATION)
-
-
+#if !defined(ASIO_NO_DEPRECATED)
 /// (Deprecated: Use executor_work_guard.) Class to inform the io_context when
 /// it has work to do.
 /**
@@ -657,11 +726,9 @@ public:
   /// Get the io_context associated with the work.
   asio::io_context& get_io_context();
 
-#if !defined(ASIO_NO_DEPRECATED)
   /// (Deprecated: Use get_io_context().) Get the io_context associated with the
   /// work.
   asio::io_context& get_io_service();
-#endif // !defined(ASIO_NO_DEPRECATED)
 
 private:
   // Prevent assignment.
@@ -670,6 +737,7 @@ private:
   // The io_context implementation.
   detail::io_context_impl& io_context_impl_;
 };
+#endif // !defined(ASIO_NO_DEPRECATED)
 
 /// Base class for all io_context services.
 class io_context::service
@@ -757,8 +825,10 @@ asio::detail::service_id<Type> service_base<Type>::id;
 
 // If both io_context.hpp and strand.hpp have been included, automatically
 // include the header file needed for the io_context::strand class.
-#if defined(ASIO_STRAND_HPP)
-# include "asio/io_context_strand.hpp"
-#endif // defined(ASIO_STRAND_HPP)
+#if !defined(ASIO_NO_EXTENSIONS)
+# if defined(ASIO_STRAND_HPP)
+#  include "asio/io_context_strand.hpp"
+# endif // defined(ASIO_STRAND_HPP)
+#endif // !defined(ASIO_NO_EXTENSIONS)
 
 #endif // ASIO_IO_CONTEXT_HPP

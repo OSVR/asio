@@ -2,7 +2,7 @@
 // impl/io_context.hpp
 // ~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,6 +21,7 @@
 #include "asio/detail/handler_type_requirements.hpp"
 #include "asio/detail/recycling_allocator.hpp"
 #include "asio/detail/service_registry.hpp"
+#include "asio/detail/throw_error.hpp"
 #include "asio/detail/type_traits.hpp"
 
 #include "asio/detail/push_options.hpp"
@@ -64,6 +65,61 @@ io_context::get_executor() ASIO_NOEXCEPT
   return executor_type(*this);
 }
 
+#if defined(ASIO_HAS_CHRONO)
+
+template <typename Rep, typename Period>
+std::size_t io_context::run_for(
+    const chrono::duration<Rep, Period>& rel_time)
+{
+  return this->run_until(chrono::steady_clock::now() + rel_time);
+}
+
+template <typename Clock, typename Duration>
+std::size_t io_context::run_until(
+    const chrono::time_point<Clock, Duration>& abs_time)
+{
+  std::size_t n = 0;
+  while (this->run_one_until(abs_time))
+    if (n != (std::numeric_limits<std::size_t>::max)())
+      ++n;
+  return n;
+}
+
+template <typename Rep, typename Period>
+std::size_t io_context::run_one_for(
+    const chrono::duration<Rep, Period>& rel_time)
+{
+  return this->run_one_until(chrono::steady_clock::now() + rel_time);
+}
+
+template <typename Clock, typename Duration>
+std::size_t io_context::run_one_until(
+    const chrono::time_point<Clock, Duration>& abs_time)
+{
+  typename Clock::time_point now = Clock::now();
+  while (now < abs_time)
+  {
+    typename Clock::duration rel_time = abs_time - now;
+    if (rel_time > chrono::seconds(1))
+      rel_time = chrono::seconds(1);
+
+    asio::error_code ec;
+    std::size_t s = impl_.wait_one(
+        static_cast<long>(chrono::duration_cast<
+          chrono::microseconds>(rel_time).count()), ec);
+    asio::detail::throw_error(ec);
+
+    if (s || impl_.stopped())
+      return s;
+
+    now = Clock::now();
+  }
+
+  return 0;
+}
+
+#endif // defined(ASIO_HAS_CHRONO)
+
 #if !defined(ASIO_NO_DEPRECATED)
 
 inline void io_context::reset()
@@ -84,16 +140,17 @@ io_context::dispatch(ASIO_MOVE_ARG(CompletionHandler) handler)
   if (impl_.can_dispatch())
   {
     detail::fenced_block b(detail::fenced_block::full);
-    asio_handler_invoke_helpers::invoke(init.handler, init.handler);
+    asio_handler_invoke_helpers::invoke(
+        init.completion_handler, init.completion_handler);
   }
   else
   {
     // Allocate and construct an operation to wrap the handler.
     typedef detail::completion_handler<
       typename handler_type<CompletionHandler, void ()>::type> op;
-    typename op::ptr p = { detail::addressof(init.handler),
-      op::ptr::allocate(init.handler), 0 };
-    p.p = new (p.v) op(init.handler);
+    typename op::ptr p = { detail::addressof(init.completion_handler),
+      op::ptr::allocate(init.completion_handler), 0 };
+    p.p = new (p.v) op(init.completion_handler);
 
     ASIO_HANDLER_CREATION((*this, *p.p,
           "io_context", this, 0, "dispatch"));
@@ -116,14 +173,14 @@ io_context::post(ASIO_MOVE_ARG(CompletionHandler) handler)
   async_completion<CompletionHandler, void ()> init(handler);
 
   bool is_continuation =
-    asio_handler_cont_helpers::is_continuation(init.handler);
+    asio_handler_cont_helpers::is_continuation(init.completion_handler);
 
   // Allocate and construct an operation to wrap the handler.
   typedef detail::completion_handler<
     typename handler_type<CompletionHandler, void ()>::type> op;
-  typename op::ptr p = { detail::addressof(init.handler),
-      op::ptr::allocate(init.handler), 0 };
-  p.p = new (p.v) op(init.handler);
+  typename op::ptr p = { detail::addressof(init.completion_handler),
+      op::ptr::allocate(init.completion_handler), 0 };
+  p.p = new (p.v) op(init.completion_handler);
 
   ASIO_HANDLER_CREATION((*this, *p.p,
         "io_context", this, 0, "post"));
@@ -254,6 +311,7 @@ io_context::executor_type::running_in_this_thread() const ASIO_NOEXCEPT
   return io_context_.impl_.can_dispatch();
 }
 
+#if !defined(ASIO_NO_DEPRECATED)
 inline io_context::work::work(asio::io_context& io_context)
   : io_context_impl_(io_context.impl_)
 {
@@ -276,7 +334,6 @@ inline asio::io_context& io_context::work::get_io_context()
   return static_cast<asio::io_context&>(io_context_impl_.context());
 }
 
-#if !defined(ASIO_NO_DEPRECATED)
 inline asio::io_context& io_context::work::get_io_service()
 {
   return static_cast<asio::io_context&>(io_context_impl_.context());

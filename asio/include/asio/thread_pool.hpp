@@ -2,7 +2,7 @@
 // thread_pool.hpp
 // ~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,7 +20,6 @@
 #include "asio/detail/scheduler.hpp"
 #include "asio/detail/thread_group.hpp"
 #include "asio/execution_context.hpp"
-#include "asio/is_executor.hpp"
 
 #include "asio/detail/push_options.hpp"
 
@@ -190,10 +189,6 @@ private:
   // The underlying thread pool.
   thread_pool& pool_;
 };
-
-#if !defined(GENERATING_DOCUMENTATION)
-template <> struct is_executor<thread_pool::executor_type> : true_type {};
-#endif // !defined(GENERATING_DOCUMENTATION)
 
 } // namespace asio
 

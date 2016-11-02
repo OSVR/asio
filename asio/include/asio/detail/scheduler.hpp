@@ -2,7 +2,7 @@
 // detail/scheduler.hpp
 // ~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,8 +20,8 @@
 #include "asio/error_code.hpp"
 #include "asio/execution_context.hpp"
 #include "asio/detail/atomic_count.hpp"
-#include "asio/detail/event.hpp"
-#include "asio/detail/mutex.hpp"
+#include "asio/detail/conditionally_enabled_event.hpp"
+#include "asio/detail/conditionally_enabled_mutex.hpp"
 #include "asio/detail/op_queue.hpp"
 #include "asio/detail/reactor_fwd.hpp"
 #include "asio/detail/scheduler_operation.hpp"
@@ -57,6 +57,10 @@ public:
 
   // Run until interrupted or one operation is performed.
   ASIO_DECL std::size_t run_one(asio::error_code& ec);
+
+  // Run until timeout, interrupted, or one operation is performed.
+  ASIO_DECL std::size_t wait_one(
+      long usec, asio::error_code& ec);
 
   // Poll for operations without blocking.
   ASIO_DECL std::size_t poll(asio::error_code& ec);
@@ -117,13 +121,29 @@ public:
   // work_started() was previously called for the operations.
   ASIO_DECL void abandon_operations(op_queue<operation>& ops);
 
+  // Get the concurrency hint that was used to initialise the scheduler.
+  int concurrency_hint() const
+  {
+    return concurrency_hint_;
+  }
+
 private:
+  // The mutex type used by this scheduler.
+  typedef conditionally_enabled_mutex mutex;
+
+  // The event type used by this scheduler.
+  typedef conditionally_enabled_event event;
+
   // Structure containing thread-specific data.
   typedef scheduler_thread_info thread_info;
 
   // Run at most one operation. May block.
   ASIO_DECL std::size_t do_run_one(mutex::scoped_lock& lock,
       thread_info& this_thread, const asio::error_code& ec);
+
+  // Run at most one operation with a timeout. May block.
+  ASIO_DECL std::size_t do_wait_one(mutex::scoped_lock& lock,
+      thread_info& this_thread, long usec, const asio::error_code& ec);
 
   // Poll for at most one operation.
   ASIO_DECL std::size_t do_poll_one(mutex::scoped_lock& lock,
@@ -176,6 +196,9 @@ private:
 
   // Flag to indicate that the dispatcher has been shut down.
   bool shutdown_;
+
+  // The concurrency hint used to initialise the scheduler.
+  const int concurrency_hint_;
 };
 
 } // namespace detail

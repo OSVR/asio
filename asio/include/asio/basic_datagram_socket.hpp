@@ -2,7 +2,7 @@
 // basic_datagram_socket.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,11 +18,14 @@
 #include "asio/detail/config.hpp"
 #include <cstddef>
 #include "asio/basic_socket.hpp"
-#include "asio/datagram_socket_service.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
 #include "asio/detail/throw_error.hpp"
 #include "asio/detail/type_traits.hpp"
 #include "asio/error.hpp"
+
+#if defined(ASIO_ENABLE_OLD_SERVICES)
+# include "asio/datagram_socket_service.hpp"
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
 
 #include "asio/detail/push_options.hpp"
 
@@ -37,14 +40,19 @@ namespace asio {
  * @e Distinct @e objects: Safe.@n
  * @e Shared @e objects: Unsafe.
  */
-template <typename Protocol,
-    typename DatagramSocketService = datagram_socket_service<Protocol> >
+template <typename Protocol
+    ASIO_SVC_TPARAM_DEF1(= datagram_socket_service<Protocol>)>
 class basic_datagram_socket
-  : public basic_socket<Protocol, DatagramSocketService>
+  : public basic_socket<Protocol ASIO_SVC_TARG>
 {
 public:
   /// The native representation of a socket.
-  typedef typename DatagramSocketService::native_handle_type native_handle_type;
+#if defined(GENERATING_DOCUMENTATION)
+  typedef implementation_defined native_handle_type;
+#else
+  typedef typename basic_socket<
+    Protocol ASIO_SVC_TARG>::native_handle_type native_handle_type;
+#endif
 
   /// The protocol type.
   typedef Protocol protocol_type;
@@ -62,7 +70,7 @@ public:
    * socket.
    */
   explicit basic_datagram_socket(asio::io_context& io_context)
-    : basic_socket<Protocol, DatagramSocketService>(io_context)
+    : basic_socket<Protocol ASIO_SVC_TARG>(io_context)
   {
   }
 
@@ -80,7 +88,7 @@ public:
    */
   basic_datagram_socket(asio::io_context& io_context,
       const protocol_type& protocol)
-    : basic_socket<Protocol, DatagramSocketService>(io_context, protocol)
+    : basic_socket<Protocol ASIO_SVC_TARG>(io_context, protocol)
   {
   }
 
@@ -102,7 +110,7 @@ public:
    */
   basic_datagram_socket(asio::io_context& io_context,
       const endpoint_type& endpoint)
-    : basic_socket<Protocol, DatagramSocketService>(io_context, endpoint)
+    : basic_socket<Protocol ASIO_SVC_TARG>(io_context, endpoint)
   {
   }
 
@@ -123,7 +131,7 @@ public:
    */
   basic_datagram_socket(asio::io_context& io_context,
       const protocol_type& protocol, const native_handle_type& native_socket)
-    : basic_socket<Protocol, DatagramSocketService>(
+    : basic_socket<Protocol ASIO_SVC_TARG>(
         io_context, protocol, native_socket)
   {
   }
@@ -140,8 +148,7 @@ public:
    * constructed using the @c basic_datagram_socket(io_context&) constructor.
    */
   basic_datagram_socket(basic_datagram_socket&& other)
-    : basic_socket<Protocol, DatagramSocketService>(
-        ASIO_MOVE_CAST(basic_datagram_socket)(other))
+    : basic_socket<Protocol ASIO_SVC_TARG>(std::move(other))
   {
   }
 
@@ -158,8 +165,7 @@ public:
    */
   basic_datagram_socket& operator=(basic_datagram_socket&& other)
   {
-    basic_socket<Protocol, DatagramSocketService>::operator=(
-        ASIO_MOVE_CAST(basic_datagram_socket)(other));
+    basic_socket<Protocol ASIO_SVC_TARG>::operator=(std::move(other));
     return *this;
   }
 
@@ -174,13 +180,11 @@ public:
    * @note Following the move, the moved-from object is in the same state as if
    * constructed using the @c basic_datagram_socket(io_context&) constructor.
    */
-  template <typename Protocol1, typename DatagramSocketService1>
+  template <typename Protocol1 ASIO_SVC_TPARAM1>
   basic_datagram_socket(
-      basic_datagram_socket<Protocol1, DatagramSocketService1>&& other,
+      basic_datagram_socket<Protocol1 ASIO_SVC_TARG1>&& other,
       typename enable_if<is_convertible<Protocol1, Protocol>::value>::type* = 0)
-    : basic_socket<Protocol, DatagramSocketService>(
-        ASIO_MOVE_CAST2(basic_datagram_socket<
-          Protocol1, DatagramSocketService1>)(other))
+    : basic_socket<Protocol ASIO_SVC_TARG>(std::move(other))
   {
   }
 
@@ -196,17 +200,24 @@ public:
    * @note Following the move, the moved-from object is in the same state as if
    * constructed using the @c basic_datagram_socket(io_context&) constructor.
    */
-  template <typename Protocol1, typename DatagramSocketService1>
+  template <typename Protocol1 ASIO_SVC_TPARAM1>
   typename enable_if<is_convertible<Protocol1, Protocol>::value,
       basic_datagram_socket>::type& operator=(
-        basic_datagram_socket<Protocol1, DatagramSocketService1>&& other)
+        basic_datagram_socket<Protocol1 ASIO_SVC_TARG1>&& other)
   {
-    basic_socket<Protocol, DatagramSocketService>::operator=(
-        ASIO_MOVE_CAST2(basic_datagram_socket<
-          Protocol1, DatagramSocketService1>)(other));
+    basic_socket<Protocol ASIO_SVC_TARG>::operator=(std::move(other));
     return *this;
   }
 #endif // defined(ASIO_HAS_MOVE) || defined(GENERATING_DOCUMENTATION)
+
+  /// Destroys the socket.
+  /**
+   * This function destroys the socket, cancelling any outstanding asynchronous
+   * operations associated with the socket as if by calling @c cancel.
+   */
+  ~basic_datagram_socket()
+  {
+  }
 
   /// Send some data on a connected socket.
   /**
@@ -338,8 +349,18 @@ public:
     // not meet the documented type requirements for a WriteHandler.
     ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_send(this->get_implementation(),
         buffers, 0, ASIO_MOVE_CAST(WriteHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<WriteHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_send(this->get_implementation(),
+        buffers, 0, init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 
   /// Start an asynchronous send on a connected socket.
@@ -381,8 +402,18 @@ public:
     // not meet the documented type requirements for a WriteHandler.
     ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_send(this->get_implementation(),
         buffers, flags, ASIO_MOVE_CAST(WriteHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<WriteHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_send(this->get_implementation(),
+        buffers, flags, init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 
   /// Send a datagram to the specified endpoint.
@@ -521,9 +552,20 @@ public:
     // not meet the documented type requirements for a WriteHandler.
     ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_send_to(
         this->get_implementation(), buffers, destination, 0,
         ASIO_MOVE_CAST(WriteHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<WriteHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_send_to(
+        this->get_implementation(), buffers, destination, 0,
+        init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 
   /// Start an asynchronous send.
@@ -564,9 +606,20 @@ public:
     // not meet the documented type requirements for a WriteHandler.
     ASIO_WRITE_HANDLER_CHECK(WriteHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_send_to(
         this->get_implementation(), buffers, destination, flags,
         ASIO_MOVE_CAST(WriteHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<WriteHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_send_to(
+        this->get_implementation(), buffers, destination, flags,
+        init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 
   /// Receive some data on a connected socket.
@@ -704,8 +757,18 @@ public:
     // not meet the documented type requirements for a ReadHandler.
     ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_receive(this->get_implementation(),
         buffers, 0, ASIO_MOVE_CAST(ReadHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<ReadHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_receive(this->get_implementation(),
+        buffers, 0, init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 
   /// Start an asynchronous receive on a connected socket.
@@ -747,8 +810,18 @@ public:
     // not meet the documented type requirements for a ReadHandler.
     ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_receive(this->get_implementation(),
         buffers, flags, ASIO_MOVE_CAST(ReadHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<ReadHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_receive(this->get_implementation(),
+        buffers, flags, init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 
   /// Receive a datagram with the endpoint of the sender.
@@ -887,9 +960,20 @@ public:
     // not meet the documented type requirements for a ReadHandler.
     ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_receive_from(
         this->get_implementation(), buffers, sender_endpoint, 0,
         ASIO_MOVE_CAST(ReadHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<ReadHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_receive_from(
+        this->get_implementation(), buffers, sender_endpoint, 0,
+        init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 
   /// Start an asynchronous receive.
@@ -932,9 +1016,20 @@ public:
     // not meet the documented type requirements for a ReadHandler.
     ASIO_READ_HANDLER_CHECK(ReadHandler, handler) type_check;
 
+#if defined(ASIO_ENABLE_OLD_SERVICES)
     return this->get_service().async_receive_from(
         this->get_implementation(), buffers, sender_endpoint, flags,
         ASIO_MOVE_CAST(ReadHandler)(handler));
+#else // defined(ASIO_ENABLE_OLD_SERVICES)
+    async_completion<ReadHandler,
+      void (asio::error_code, std::size_t)> init(handler);
+
+    this->get_service().async_receive_from(
+        this->get_implementation(), buffers, sender_endpoint, flags,
+        init.completion_handler);
+
+    return init.result.get();
+#endif // defined(ASIO_ENABLE_OLD_SERVICES)
   }
 };
 

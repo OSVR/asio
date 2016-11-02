@@ -88,8 +88,7 @@ noinst_HEADERS = \
 	chat/chat_message.hpp \
 	services/basic_logger.hpp \
 	services/logger.hpp \
-	services/logger_service.hpp \
-	services/stream_socket_service.hpp
+	services/logger_service.hpp
 
 AM_CXXFLAGS = -I$(srcdir)/../../../include
 
@@ -191,9 +190,9 @@ endif
 
 if HAVE_BOOST_COROUTINE
 spawn_echo_server_SOURCES = spawn/echo_server.cpp
-spawn_echo_server_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_system
+spawn_echo_server_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_thread -lboost_chrono -lboost_system
 spawn_parallel_grep_SOURCES = spawn/parallel_grep.cpp
-spawn_parallel_grep_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_system
+spawn_parallel_grep_LDADD = $(LDADD) -lboost_coroutine -lboost_context -lboost_thread -lboost_chrono -lboost_system
 endif
 
 EXTRA_DIST = \
@@ -240,7 +239,6 @@ EXTRA_DIST = \
 	services/basic_logger.hpp \
 	services/logger.hpp \
 	services/logger_service.hpp \
-	services/stream_socket_service.hpp \
 	socks4/socks4.hpp \
 	ssl/README \
 	ssl/ca.pem \

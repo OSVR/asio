@@ -2,7 +2,7 @@
 // ssl/detail/impl/engine.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -40,7 +40,9 @@ engine::engine(SSL_CTX* context)
     asio::detail::throw_error(ec, "engine");
   }
 
+#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
   accept_mutex().init();
+#endif // (OPENSSL_VERSION_NUMBER < 0x10000000L)
 
   ::SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE);
   ::SSL_set_mode(ssl_, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
@@ -165,7 +167,7 @@ engine::want engine::read(const asio::mutable_buffer& data,
       data.size(), ec, &bytes_transferred);
 }
 
-asio::mutable_buffers_1 engine::get_output(
+asio::mutable_buffer engine::get_output(
     const asio::mutable_buffer& data)
 {
   int length = ::BIO_read(ext_bio_,
@@ -201,8 +203,10 @@ const asio::error_code& engine::map_error_code(
 
   // SSL v2 doesn't provide a protocol-level shutdown, so an eof on the
   // underlying transport is passed through.
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
   if (ssl_->version == SSL2_VERSION)
     return ec;
+#endif // (OPENSSL_VERSION_NUMBER < 0x10100000L)
 
   // Otherwise, the peer should have negotiated a proper shutdown.
   if ((::SSL_get_shutdown(ssl_) & SSL_RECEIVED_SHUTDOWN) == 0)
@@ -213,11 +217,13 @@ const asio::error_code& engine::map_error_code(
   return ec;
 }
 
+#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
 asio::detail::static_mutex& engine::accept_mutex()
 {
   static asio::detail::static_mutex mutex = ASIO_STATIC_MUTEX_INIT;
   return mutex;
 }
+#endif // (OPENSSL_VERSION_NUMBER < 0x10000000L)
 
 engine::want engine::perform(int (engine::* op)(void*, std::size_t),
     void* data, std::size_t length, asio::error_code& ec,
@@ -276,7 +282,9 @@ engine::want engine::perform(int (engine::* op)(void*, std::size_t),
 
 int engine::do_accept(void*, std::size_t)
 {
+#if (OPENSSL_VERSION_NUMBER < 0x10000000L)
   asio::detail::static_mutex::scoped_lock lock(accept_mutex());
+#endif // (OPENSSL_VERSION_NUMBER < 0x10000000L)
   return ::SSL_accept(ssl_);
 }
 

@@ -2,7 +2,7 @@
 // ssl/stream.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -259,10 +259,11 @@ public:
    *
    * @note Calls @c SSL_set_verify.
    */
-  asio::error_code set_verify_mode(
+  ASIO_SYNC_OP_VOID set_verify_mode(
       verify_mode v, asio::error_code& ec)
   {
-    return core_.engine_.set_verify_mode(v, ec);
+    core_.engine_.set_verify_mode(v, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Set the peer verification depth.
@@ -296,10 +297,11 @@ public:
    *
    * @note Calls @c SSL_set_verify_depth.
    */
-  asio::error_code set_verify_depth(
+  ASIO_SYNC_OP_VOID set_verify_depth(
       int depth, asio::error_code& ec)
   {
-    return core_.engine_.set_verify_depth(depth, ec);
+    core_.engine_.set_verify_depth(depth, ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Set the callback used to verify peer certificates.
@@ -347,11 +349,12 @@ public:
    * @note Calls @c SSL_set_verify.
    */
   template <typename VerifyCallback>
-  asio::error_code set_verify_callback(VerifyCallback callback,
+  ASIO_SYNC_OP_VOID set_verify_callback(VerifyCallback callback,
       asio::error_code& ec)
   {
-    return core_.engine_.set_verify_callback(
+    core_.engine_.set_verify_callback(
         new detail::verify_callback<VerifyCallback>(callback), ec);
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Perform SSL handshaking.
@@ -381,11 +384,11 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code handshake(handshake_type type,
+  ASIO_SYNC_OP_VOID handshake(handshake_type type,
       asio::error_code& ec)
   {
     detail::io(next_layer_, core_, detail::handshake_op(type), ec);
-    return ec;
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Perform SSL handshaking.
@@ -421,12 +424,12 @@ public:
    * @param ec Set to indicate what error occurred, if any.
    */
   template <typename ConstBufferSequence>
-  asio::error_code handshake(handshake_type type,
+  ASIO_SYNC_OP_VOID handshake(handshake_type type,
       const ConstBufferSequence& buffers, asio::error_code& ec)
   {
     detail::io(next_layer_, core_,
         detail::buffered_handshake_op<ConstBufferSequence>(type, buffers), ec);
-    return ec;
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Start an asynchronous SSL handshake.
@@ -458,7 +461,7 @@ public:
       void (asio::error_code)> init(handler);
 
     detail::async_io(next_layer_, core_,
-        detail::handshake_op(type), init.handler);
+        detail::handshake_op(type), init.completion_handler);
 
     return init.result.get();
   }
@@ -500,7 +503,7 @@ public:
 
     detail::async_io(next_layer_, core_,
         detail::buffered_handshake_op<ConstBufferSequence>(type, buffers),
-        init.handler);
+        init.completion_handler);
 
     return init.result.get();
   }
@@ -526,10 +529,10 @@ public:
    *
    * @param ec Set to indicate what error occurred, if any.
    */
-  asio::error_code shutdown(asio::error_code& ec)
+  ASIO_SYNC_OP_VOID shutdown(asio::error_code& ec)
   {
     detail::io(next_layer_, core_, detail::shutdown_op(), ec);
-    return ec;
+    ASIO_SYNC_OP_VOID_RETURN(ec);
   }
 
   /// Asynchronously shut down SSL on the stream.
@@ -556,7 +559,8 @@ public:
     asio::async_completion<ShutdownHandler,
       void (asio::error_code)> init(handler);
 
-    detail::async_io(next_layer_, core_, detail::shutdown_op(), init.handler);
+    detail::async_io(next_layer_, core_, detail::shutdown_op(),
+        init.completion_handler);
 
     return init.result.get();
   }
@@ -646,7 +650,8 @@ public:
       void (asio::error_code, std::size_t)> init(handler);
 
     detail::async_io(next_layer_, core_,
-        detail::write_op<ConstBufferSequence>(buffers), init.handler);
+        detail::write_op<ConstBufferSequence>(buffers),
+        init.completion_handler);
 
     return init.result.get();
   }
@@ -737,7 +742,8 @@ public:
       void (asio::error_code, std::size_t)> init(handler);
 
     detail::async_io(next_layer_, core_,
-        detail::read_op<MutableBufferSequence>(buffers), init.handler);
+        detail::read_op<MutableBufferSequence>(buffers),
+        init.completion_handler);
 
     return init.result.get();
   }

@@ -2,7 +2,7 @@
 // ssl/detail/stream_core.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -113,13 +113,13 @@ struct stream_core
   std::vector<unsigned char> output_buffer_space_;
 
   // A buffer that may be used to prepare output intended for the transport.
-  const asio::mutable_buffers_1 output_buffer_;
+  const asio::mutable_buffer output_buffer_;
 
   // Buffer space used to read input intended for the engine.
   std::vector<unsigned char> input_buffer_space_;
 
   // A buffer that may be used to read input intended for the engine.
-  const asio::mutable_buffers_1 input_buffer_;
+  const asio::mutable_buffer input_buffer_;
 
   // The buffer pointing to the engine's unconsumed input.
   asio::const_buffer input_;

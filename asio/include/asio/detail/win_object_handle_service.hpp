@@ -2,7 +2,7 @@
 // detail/win_object_handle_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 // Copyright (c) 2011 Boris Schaeling (boris@highscore.de)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -31,7 +31,8 @@
 namespace asio {
 namespace detail {
 
-class win_object_handle_service
+class win_object_handle_service :
+  public service_base<win_object_handle_service>
 {
 public:
   // The native type of an object handle.

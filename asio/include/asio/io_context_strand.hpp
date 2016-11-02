@@ -2,7 +2,7 @@
 // io_context_strand.hpp
 // ~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,6 +16,9 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include "asio/detail/config.hpp"
+
+#if !defined(ASIO_NO_EXTENSIONS)
+
 #include "asio/async_result.hpp"
 #include "asio/detail/handler_type_requirements.hpp"
 #include "asio/detail/strand_service.hpp"
@@ -218,7 +221,7 @@ public:
 
     async_completion<CompletionHandler, void ()> init(handler);
 
-    service_.dispatch(impl_, init.handler);
+    service_.dispatch(impl_, init.completion_handler);
 
     return init.result.get();
   }
@@ -272,7 +275,7 @@ public:
 
     async_completion<CompletionHandler, void ()> init(handler);
 
-    service_.post(impl_, init.handler);
+    service_.post(impl_, init.completion_handler);
 
     return init.result.get();
   }
@@ -370,13 +373,10 @@ private:
   asio::detail::strand_service::implementation_type impl_;
 };
 
-#if !defined(GENERATING_DOCUMENTATION)
-template <>
-struct is_executor<io_context::strand> : true_type {};
-#endif // !defined(GENERATING_DOCUMENTATION)
-
 } // namespace asio
 
 #include "asio/detail/pop_options.hpp"
+
+#endif // !defined(ASIO_NO_EXTENSIONS)
 
 #endif // ASIO_IO_CONTEXT_STRAND_HPP

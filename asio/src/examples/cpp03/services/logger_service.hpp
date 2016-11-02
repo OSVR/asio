@@ -2,7 +2,7 @@
 // logger_service.hpp
 // ~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2015 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2016 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -44,7 +44,7 @@ public:
   logger_service(asio::io_context& io_context)
     : asio::io_context::service(io_context),
       work_io_context_(),
-      work_(new asio::io_context::work(work_io_context_)),
+      work_(asio::make_work_guard(work_io_context_)),
       work_thread_(new asio::thread(
             boost::bind(&asio::io_context::run, &work_io_context_)))
   {
@@ -130,7 +130,8 @@ private:
   /// Work for the private io_context to perform. If we do not give the
   /// io_context some work to do then the io_context::run() function will exit
   /// immediately.
-  boost::scoped_ptr<asio::io_context::work> work_;
+  asio::executor_work_guard<
+      asio::io_context::executor_type> work_;
 
   /// Thread used for running the work io_context's run loop.
   boost::scoped_ptr<asio::thread> work_thread_;
