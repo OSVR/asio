@@ -178,6 +178,11 @@
 #   define ASIO_DELETED = delete
 #  endif // __has_feature(__cxx_deleted_functions__)
 # endif // defined(__clang__)
+# if defined(ASIO_MSVC) && !defined(__clang__)
+#  if (_MSC_VER >= 1800)
+#   define ASIO_DELETED = delete
+#  endif // (_MSC_VER >= 1800)
+# endif // defined(ASIO_MSVC) && !defined(__clang__)
 # if !defined(ASIO_DELETED)
 #  define ASIO_DELETED
 # endif // !defined(ASIO_DELETED)
