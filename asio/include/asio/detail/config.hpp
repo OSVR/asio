@@ -156,6 +156,11 @@
 #    endif // defined(__GXX_EXPERIMENTAL_CXX0X__)
 #   endif // ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 4)
 #  endif // defined(__GNUC__)
+#  if defined(ASIO_MSVC) && !defined(__clang__)
+#    if (_MSC_VER >= 1800)
+#      define ASIO_HAS_VARIADIC_TEMPLATES 1
+#    endif // (_MSC_VER >= 1800)
+#  endif // defined(ASIO_MSVC) && !defined(__clang__)
 # endif // !defined(ASIO_DISABLE_VARIADIC_TEMPLATES)
 #endif // !defined(ASIO_HAS_VARIADIC_TEMPLATES)
 
